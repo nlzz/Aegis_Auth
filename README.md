@@ -1,148 +1,81 @@
-# 🛡️ Aegis Auth
+# Aegis Auth
 
-**Sistema Seguro de Autenticação em PHP**
+**Sistema de Autenticação Segura em PHP**
 
-Um sistema de autenticação completo construído com PHP puro, focado em boas práticas de segurança. O nome "Aegis" vem do escudo de Zeus na mitologia grega — proteção em primeiro lugar.
-
----
-
-## ✨ Funcionalidades
-
-### Core
-- ✅ **Cadastro** de usuários com validação completa
-- ✅ **Login** seguro com sessão protegida
-- ✅ **Dashboard** privado (área autenticada)
-- ✅ **Logout** com destruição completa da sessão
-
-### Segurança
-- 🔐 **Hash de senha** com `password_hash()` (bcrypt, cost 12)
-- 🔐 **Verificação** com `password_verify()`
-- 🔐 **CSRF Token** em todos os formulários
-- 🔐 **PDO Prepared Statements** contra SQL Injection
-- 🔐 **Sessão segura** (HttpOnly, SameSite, Strict Mode)
-- 🔐 **Regeneração de Session ID** periódica
-- 🔐 **Mensagens genéricas** no login (não revela se email existe)
-- 🔐 **Sanitização** de todos os inputs
-
-### Extras
-- 🔄 **Lembrar-me** com token rotativo (SHA-256)
-- 🚫 **Bloqueio** após 5 tentativas falhas (15 min)
-- 📧 **Recuperação de senha** com token temporário
-- 💪 **Validação de força da senha** em tempo real
-- 🔄 **Rehash automático** quando o algoritmo muda
+O Aegis Auth é uma solução de autenticação robusta desenvolvida em PHP puro, projetada sob princípios de "Security by Design". O sistema implementa múltiplas camadas de proteção contra os vetores de ataque mais comuns na web, priorizando a integridade dos dados e a privacidade dos usuários.
 
 ---
 
-## 📁 Estrutura
+## Funcionalidades Principais
+
+### Gerenciamento de Identidade
+- **Cadastro e Login:** Fluxos completos com validação rigorosa de dados.
+- **Área Restrita:** Dashboard protegido com verificação persistente de estado.
+- **Recuperação de Senha:** Processo seguro via tokens temporários e proteção contra ataques de temporização (Timing Attacks).
+- **Lembrar-me:** Persistência de sessão utilizando o padrão Selector/Validator para evitar a exposição de IDs de usuário.
+
+### Camadas de Segurança
+- **Criptografia:** Armazenamento de senhas utilizando `password_hash()` com algoritmo Bcrypt (cost 12).
+- **Proteção de Sessão:** Cookies configurados com `HttpOnly`, `SameSite=Strict` e regeneração periódica de IDs.
+- **Defesa contra Injeção:** Uso exclusivo de PDO com Prepared Statements (Emulação desativada).
+- **CSRF Protection:** Tokens de segurança persistidos em banco de dados, suportando navegação em múltiplas abas.
+- **Auditoria:** Log detalhado de eventos críticos (registros, logins, trocas de senha e bloqueios).
+- **Segurança de Navegador:** Implementação de cabeçalhos CSP, HSTS, X-Frame-Options e Referrer-Policy.
+
+### Infraestrutura Defensiva
+- **Bloqueio Híbrido:** Monitoramento de tentativas falhas por endereço IP e por conta de e-mail.
+- **CAPTCHA Inteligente:** Integração com Cloudflare Turnstile, ativado dinamicamente após detecção de comportamento suspeito.
+- **Identificadores Únicos:** Uso de UUID v4 para identificação pública, ocultando chaves primárias sequenciais.
+
+---
+
+## Arquitetura do Projeto
 
 ```
 aegis-auth/
-├── public/
-│   ├── assets/
-│   │   └── css/
-│   │       └── style.css         # Design system premium
-│   ├── login.php                 # Página de login
-│   ├── register.php              # Página de cadastro
-│   ├── dashboard.php             # Painel privado
-│   ├── logout.php                # Handler de logout
-│   ├── forgot-password.php       # Solicitar reset
-│   └── reset-password.php        # Redefinir senha
-├── config/
-│   └── database.php              # Configuração PDO
 ├── app/
-│   └── auth.php                  # Módulo de autenticação
+│   └── auth.php           # Núcleo de lógica e funções de segurança
+├── config/
+│   └── database.php       # Configurações globais e constantes
 ├── database/
-│   └── schema.sql                # Schema do banco
-├── README.md
-└── LICENSE
+│   └── schema.sql         # Definição das tabelas e índices
+├── public/                # Diretório raiz do servidor web
+│   ├── assets/            # Recursos estáticos (CSS, JS, Imagens)
+│   ├── dashboard.php      # Painel administrativo
+│   ├── login.php          # Interface de autenticação
+│   └── register.php       # Interface de cadastro
+├── .env.example           # Modelo para variáveis de ambiente
+└── README.md
 ```
 
 ---
 
-## 🚀 Instalação
+## Requisitos e Instalação
 
 ### Pré-requisitos
-- PHP 8.0+
+- PHP 8.0 ou superior
 - MySQL 5.7+ ou MariaDB 10.3+
-- Servidor web (Apache/Nginx) ou PHP built-in server
+- Extensão `php-curl` habilitada para integração com Turnstile
 
-### Passo a passo
+### Guia de Instalação
 
-1. **Clone o repositório**
-```bash
-git clone https://github.com/seu-usuario/aegis-auth.git
-cd aegis-auth
-```
+1. **Configuração do Banco de Dados:**
+   Importe o schema localizado em `database/schema.sql` para o seu servidor MySQL.
 
-2. **Crie o banco de dados**
-```bash
-mysql -u root -p < database/schema.sql
-```
+2. **Variáveis de Ambiente:**
+   Crie um arquivo `.env` na raiz do projeto seguindo o modelo `.env.example`. É obrigatório definir as credenciais do banco para que o sistema funcione.
 
-3. **Configure as credenciais** em `config/database.php`
-```php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'aegis_auth');
-define('DB_USER', 'root');
-define('DB_PASS', 'sua_senha');
-```
+3. **Configuração do CAPTCHA (Opcional):**
+   Obtenha as chaves no painel do Cloudflare Turnstile e adicione-as ao arquivo `.env`. Se não configuradas, o sistema operará apenas com o bloqueio por IP/Conta.
 
-4. **Inicie o servidor**
-```bash
-php -S localhost:8000 -t public
-```
-
-5. **Acesse** → `http://localhost:8000/register.php`
+4. **Execução:**
+   Inicie o servidor PHP apontando para o diretório `public/`:
+   ```bash
+   php -S localhost:8000 -t public
+   ```
 
 ---
 
-## 🗄️ Banco de Dados
+## Licença
 
-### Tabela `users`
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| id | INT (PK) | Identificador |
-| name | VARCHAR(100) | Nome do usuário |
-| email | VARCHAR(255) | E-mail (unique) |
-| password_hash | VARCHAR(255) | Hash bcrypt |
-| created_at | TIMESTAMP | Data de criação |
-
-### Tabela `remember_tokens`
-Armazena tokens "lembrar-me" com rotação a cada uso.
-
-### Tabela `login_attempts`
-Registra tentativas para proteção contra brute force.
-
-### Tabela `password_resets`
-Tokens temporários para recuperação de senha.
-
----
-
-## 🔐 Fluxo de Segurança
-
-```
-Cadastro → Validação → Hash (bcrypt) → Salva no DB
-Login → Verifica bloqueio → Busca user → password_verify() → Sessão segura
-Dashboard → requireAuth() → Checa sessão + remember token
-Logout → Destroi sessão + cookies + tokens
-Reset → Token SHA-256 → Link temporário → Nova senha com hash
-```
-
----
-
-## ⚙️ Configurações de Segurança
-
-| Constante | Valor | Descrição |
-|-----------|-------|-----------|
-| MAX_LOGIN_ATTEMPTS | 5 | Tentativas antes do bloqueio |
-| LOCKOUT_DURATION | 900s | Tempo de bloqueio (15 min) |
-| REMEMBER_ME_DURATION | 30 dias | Validade do "lembrar-me" |
-| PASSWORD_RESET_EXPIRY | 3600s | Validade do link de reset |
-| SESSION_LIFETIME | 1800s | Tempo da sessão (30 min) |
-| MIN_PASSWORD_LENGTH | 8 | Tamanho mínimo da senha |
-
----
-
-## 📋 Licença
-
-MIT License — veja [LICENSE](LICENSE).
+Este projeto está licenciado sob a MIT License. Consulte o arquivo [LICENSE](LICENSE) para obter detalhes.
